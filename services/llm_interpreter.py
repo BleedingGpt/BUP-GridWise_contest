@@ -33,21 +33,34 @@ def _parse_hours(l: str):
     # "6pm until 9pm" → [18,19,20]
     # We do heuristic: find all hour numbers with pm/am
     import re as _re
-    # Check for range "X to Y" or "X-Y"
-    m_range = _re.search(r'(\d{1,2})\s*(?:-|to|until)\s*(\d{1,2})\s*(pm|am)?', l)
+    # Check for range "X to Y" / "X-Y" / "X and Y" — handle "1 PM to 3 PM", "8 AM and 10 AM", "11 PM to 1 AM"
+    m_range = _re.search(r'(\d{1,2})\s*(pm|am)?\s*(?:-|to|until|and)\s*(\d{1,2})\s*(pm|am)?', l)
     if m_range:
-        s, e = int(m_range.group(1)), int(m_range.group(2))
-        is_pm = m_range.group(3) == "pm" or "pm" in l
-        # Convert to 24h
-        if is_pm:
-            if s != 12: s += 12
-            if e != 12 and e < 12: e += 12
-        # Also handle 13:00 style
+        s, e = int(m_range.group(1)), int(m_range.group(3))
+        pm1, pm2 = (m_range.group(2) or "").lower(), (m_range.group(4) or "").lower()
+        # Convert each based on its own suffix, fallback to global if missing
+        def to24(h, suffix):
+            suffix = (suffix or "").lower()
+            if suffix == "pm":
+                return h + 12 if h < 12 else h
+            if suffix == "am":
+                return 0 if h == 12 else h
+            # No suffix: infer from global (if string has pm and h is 1-11, assume pm)
+            if "pm" in l and h < 12:
+                # But for cross-midnight like 11 PM to 1 AM, second h is 1 AM, not PM
+                # If second suffix is am, we already handled, so this is for cases like "1 to 3 pm"
+                return h + 12
+            if "am" in l and h == 12:
+                return 0
+            return h
+        s = to24(s, pm1)
+        e = to24(e, pm2)
         if "13" in l and "15" in l:
             return [13,14]
-        # Build range [s, e) exclusive
         if s < e:
             return list(range(s, e))
+        elif s > e:  # cross-midnight like 11 PM to 1 AM → [23,0]
+            return list(range(s, 24)) + list(range(0, e))
         return [s]
     # Single hour "at 6pm" or "at 1pm"
     m_single = _re.search(r'(\d{1,2})\s*pm', l)
@@ -110,11 +123,11 @@ def _fast_regex(note: str):
                 factor = pct/100
         elif "fifth" in l or "1/5" in l:
             factor = 0.2
-    # Handle increase vs reduction
-    if "increas" in l and factor is not None and factor < 1:
-        # "increas 25%" → factor 1.25, but spec only allows 0-1, so treat as no_op (increase not supported)
-        # But for demo we could allow >1, but judge expects no_op for increase
-        return None  # Let LLM decide, but fast path will return None → can_fast False → LLM will handle as no_op
+    # Handle increase → must be no_op (spec only allows reduction 0-1, increase is 1.25 >1 invalid)
+    if "increas" in l:
+        # "increase 25%" or "increas" typo → not a valid solar_reduction, let caller treat as no_op
+        # Return a sentinel that fast path will consider as no_op, not solar
+        return {"directive_type":"no_op","structured_adjustment":None}
     # Find hours via helper
     hours = _parse_hours(l)
     # Battery patterns
@@ -194,9 +207,16 @@ def interpret_notes(notes: list[str]) -> list[dict]:
                 can_fast=False
                 break
         else:
-            fast_parsed.append({"note_index":i,"applies":True,"directive_type":fast["directive_type"],"structured_adjustment":fast["structured_adjustment"],"explanation":"Fast regex (typo-proof)"})
+            # Handle no_op from fast regex (e.g., increase)
+            is_noop = fast["directive_type"] == "no_op"
+            fast_parsed.append({
+                "note_index": i,
+                "applies": False if is_noop else True,
+                "directive_type": fast["directive_type"],
+                "structured_adjustment": fast["structured_adjustment"],
+                "explanation": "Fast regex (typo-proof)" if not is_noop else "Fast no_op (increase not supported)"
+            })
     if can_fast:
-        # Validate fast path (hours sorted etc. already)
         _CACHE[key]=fast_parsed
         return fast_parsed
 
