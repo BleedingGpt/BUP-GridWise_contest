@@ -41,13 +41,10 @@ nav {
 
 .nav-logo {
     font-family: 'Playfair Display', Georgia, serif;
-    font-size: 18px;
+    font-size: 17px;
     font-weight: 900;
-    letter-spacing: 1.2px; /* lengthy horizontally, not tall */
+    letter-spacing: 1.2px;
     color: #1A1A1A;
-    display: flex;
-    align-items: center;
-    gap: 10px;
 }
 
 .nav-logo i {
