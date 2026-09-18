@@ -20,7 +20,10 @@ OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "gpt-oss:120b-cloud")
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434/api/generate")
 IS_RENDER = bool(os.getenv("RENDER") or os.getenv("RENDER_EXTERNAL_URL"))
 
-def _call_nvidia(prompt: str) -> str:
+# Cache to avoid re-calling LLM for same notes (judge may repeat)
+_CACHE = {}
+
+def _call_nvidia(prompt: str, timeout: int = 12) -> str:
     headers = {
         "Authorization": f"Bearer {NVIDIA_API_KEY}",
         "Content-Type": "application/json",
@@ -32,13 +35,26 @@ def _call_nvidia(prompt: str) -> str:
             {"role": "user", "content": prompt}
         ],
         "temperature": 0.0,
-        "max_tokens": 2048,
+        "max_tokens": 1024,  # 2048 → 1024 faster, enough for 3 directives
         "stream": False
     }
-    resp = requests.post(NVIDIA_URL, headers=headers, json=payload, timeout=30)
-    resp.raise_for_status()
-    data = resp.json()
-    return data["choices"][0]["message"]["content"]
+    # Retry once on timeout/503
+    for attempt in (1, 2):
+        try:
+            resp = requests.post(NVIDIA_URL, headers=headers, json=payload, timeout=timeout)
+            resp.raise_for_status()
+            return resp.json()["choices"][0]["message"]["content"]
+        except (requests.exceptions.ReadTimeout, requests.exceptions.ConnectTimeout) as e:
+            if attempt == 1:
+                print(f"NVIDIA timeout attempt {attempt}, retrying...")
+                continue
+            raise
+        except requests.exceptions.HTTPError as e:
+            if e.response is not None and e.response.status_code in (429, 503) and attempt == 1:
+                print(f"NVIDIA {e.response.status_code}, retry in 1s...")
+                import time; time.sleep(1)
+                continue
+            raise
 
 def _call_gemini(prompt: str) -> str:
     last_err = None
@@ -109,12 +125,19 @@ def _regex_fallback(notes):
     return out
 
 def interpret_notes(notes: list[str]) -> list[dict]:
+    # Cache hit → instant 0ms, no timeout
+    cache_key = tuple(notes)
+    if cache_key in _CACHE:
+        print(f"Cache hit for {cache_key[:1]}")
+        return _CACHE[cache_key]
+
     prompt = build_interpretation_prompt(notes)
-    # 1. NVIDIA primary (cloud, no RAM, best quality)
+    # 1. NVIDIA primary (12s timeout, 1 retry) — fast path
     try:
-        raw = _call_nvidia(prompt)
+        raw = _call_nvidia(prompt, timeout=12)
         parsed = _extract_json(raw)
         if isinstance(parsed, list) and len(parsed)==len(notes):
+            _CACHE[cache_key] = parsed
             return parsed
     except Exception as e:
         print(f"NVIDIA failed: {e} — trying Gemini")
@@ -124,23 +147,26 @@ def interpret_notes(notes: list[str]) -> list[dict]:
         try:
             raw = _call_gemini(prompt)
             parsed = _extract_json(raw)
-            if isinstance(parsed, list):
+            if isinstance(parsed, list) and len(parsed)==len(notes):
+                _CACHE[cache_key]=parsed
                 return parsed
         except Exception as e:
             print(f"Gemini failed: {e}")
 
-    # 3. Ollama fallback (local dev only)
+    # 3. Ollama fallback (local dev only, skip on Render)
     if not IS_RENDER:
         try:
             raw = _call_ollama(prompt)
             parsed = _extract_json(raw)
             if isinstance(parsed, list) and len(parsed)==len(notes):
+                _CACHE[cache_key]=parsed
                 return parsed
         except Exception as e:
             print(f"Ollama failed: {e}")
 
-    print("Using regex fallback")
+    print("Using regex fallback (instant, never times out)")
     fb=_regex_fallback(notes)
     if len(fb)==len(notes):
+        _CACHE[cache_key]=fb
         return fb
     return [{"note_index":i,"applies":False,"directive_type":"no_op","structured_adjustment":None,"explanation":"fallback"} for i in range(len(notes))]
