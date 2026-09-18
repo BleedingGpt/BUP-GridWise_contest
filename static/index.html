@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GridWise - Smart Campus Energy Optimizer</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><span class="status-dot" id="health-dot" title="API health"></span> GridWise</h1>
+            <p class="subtitle">Smart Campus Energy Optimization — BUP CSE Fest 2026</p>
+            <p class="header-note">Operator notes → AI interpretation → Least-cost 24h schedule</p>
+        </header>
+
+        <div class="card">
+            <h2>Scenario Input</h2>
+            <div class="form-group">
+                <label for="scenario-id">Scenario ID</label>
+                <input type="text" id="scenario-id" value="GRID-101" />
+            </div>
+            <div class="form-group">
+                <label for="operator-notes">Operator Notes (one per line, 1-3 notes)</label>
+                <textarea id="operator-notes" rows="3" placeholder="Solar output will drop to about 20% from 1 PM to 3 PM."></textarea>
+            </div>
+            <button id="run-btn" onclick="runOptimization()">Run Optimization</button>
+            <button id="sample-btn" onclick="loadSample()">Load Sample</button>
+        </div>
+
+        <div id="loading" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Processing...</p>
+        </div>
+
+        <div id="error" class="error" style="display: none;"></div>
+
+        <div id="results" style="display: none;">
+            <div class="card">
+                <h2>Directive Interpretation</h2>
+                <div id="directives-table"></div>
+            </div>
+
+            <div class="card">
+                <h2>Optimization Summary</h2>
+                <div id="summary"></div>
+            </div>
+
+            <div class="card">
+                <h2>24-Hour Schedule</h2>
+                <div class="chart-container">
+                    <canvas id="scheduleChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Battery State</h2>
+                <div class="chart-container">
+                    <canvas id="batteryChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Hourly Details</h2>
+                <div class="table-container">
+                    <table id="hourly-table">
+                        <thead>
+                            <tr>
+                                <th>Hour</th>
+                                <th>Demand</th>
+                                <th>Solar</th>
+                                <th>Grid</th>
+                                <th>Battery</th>
+                                <th>Energy After</th>
+                                <th>Tariff</th>
+                                <th>Cost</th>
+                            </tr>
+                        </thead>
+                        <tbody id="hourly-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="/static/app.js"></script>
+</body>
+</html>
