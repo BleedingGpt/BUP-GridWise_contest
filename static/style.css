@@ -20,13 +20,14 @@ nav {
     align-items: center;
     max-width: 1120px;
     margin: 0 auto;
-    padding: 14px 20px;
+    padding: 16px 22px; /* pinch more partition — few drops of salt */
     background: rgba(249,249,251,0.85);
     backdrop-filter: blur(12px);
     border-bottom: 1px solid #E5E7EB;
     position: sticky;
     top: 0;
     z-index: 20;
+    gap: 16px;
 }
 
 @media (min-width: 640px) {
@@ -40,13 +41,13 @@ nav {
 
 .nav-logo {
     font-family: 'Playfair Display', Georgia, serif;
-    font-size: 17px;
+    font-size: 18px;
     font-weight: 900;
-    letter-spacing: -0.5px;
+    letter-spacing: 1.2px; /* lengthy horizontally, not tall */
     color: #1A1A1A;
     display: flex;
     align-items: center;
-    gap: 9px;
+    gap: 10px;
 }
 
 .nav-logo i {
