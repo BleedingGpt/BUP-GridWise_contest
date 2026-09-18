@@ -8,19 +8,19 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
       :root{
-        --k-bg:#f2ede3;
-        --k-text:#14120c;
-        --k-accent:#e83c38;
-        --k-accent2:#e87c38;
-        --k-glass:rgba(255,255,255,0.32);
-        --k-border:rgba(255,255,255,0.55);
+        --k-bg:#ffffff;
+        --k-text:#16213e;
+        --k-accent:#4361ee;
+        --k-accent2:#85B7EB;
+        --k-glass:rgba(67,97,238,0.06);
+        --k-border:rgba(67,97,238,0.12);
       }
       .k-section{position:relative;background:var(--k-bg);color:var(--k-text);overflow:hidden;}
-      .k-hero{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;height:92vh;min-height:560px;}
+      .k-hero{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;height:72vh;min-height:440px;}
       .k-hero-phrase{position:relative;margin-bottom:1.2rem;font:600 11px/1 ui-monospace,Menlo,Consolas,monospace;text-transform:uppercase;letter-spacing:.4em;opacity:.55;}
-      .k-hero-word{position:relative;display:flex;font:900 24vw/1 system-ui,-apple-system,sans-serif;text-transform:uppercase;letter-spacing:-.04em;}
-      .k-hero-word span{display:inline-block;transform-origin:bottom;opacity:0;transform:rotateX(-90deg) translateY(90px);transition:opacity .6s ease,transform .8s cubic-bezier(.22,1,.36,1);text-shadow:4px 4px 0 var(--k-accent2);}
-      .k-hero-word span:nth-child(even){text-shadow:4px 4px 0 var(--k-accent);}
+      .k-hero-word{position:relative;display:flex;font:900 18vw/1 system-ui,-apple-system,sans-serif;text-transform:uppercase;letter-spacing:-.04em;}
+      .k-hero-word span{display:inline-block;transform-origin:bottom;opacity:0;transform:rotateX(-90deg) translateY(90px);transition:opacity .6s ease,transform .8s cubic-bezier(.22,1,.36,1);text-shadow:3px 3px 0 rgba(67,97,238,0.12);}
+      .k-hero-word span:nth-child(even){text-shadow:3px 3px 0 rgba(67,97,238,0.18);}
       .k-hero-word.in span{opacity:1;transform:rotateX(0) translateY(0);}
       .k-hero-sub{position:relative;margin-top:1.2rem;max-width:30ch;text-align:center;font:13px/1.6 ui-monospace,Menlo,Consolas,monospace;opacity:.6;}
       .k-pin{position:relative;height:calc(100vh + var(--k-scroll-dist,300px));}
@@ -30,7 +30,7 @@
       .k-track-word em{font:italic 400 1em/1 Georgia,serif;color:var(--k-accent);}
       .k-track-sep{display:inline-block;margin:0 2vw;opacity:.2;font-size:7vw;}
       .k-hint{position:absolute;bottom:2.2rem;left:50%;transform:translateX(-50%);font:10px/1 ui-monospace,Menlo,Consolas,monospace;text-transform:uppercase;letter-spacing:.4em;opacity:.5;}
-      .k-glass{position:absolute;pointer-events:none;border-radius:1rem;padding:1.1rem 1.25rem;border:1px solid var(--k-border);background:var(--k-glass);backdrop-filter:blur(12px);box-shadow:0 8px 32px rgba(0,0,0,.08);animation:k-bob 3.4s ease-in-out infinite alternate;}
+      .k-glass{position:absolute;pointer-events:none;border-radius:0.9rem;padding:0.9rem 1.1rem;border:1px solid var(--k-border);background:var(--k-glass);backdrop-filter:blur(10px);box-shadow:0 4px 20px rgba(67,97,238,0.07);animation:k-bob 3.4s ease-in-out infinite alternate;}
       .k-glass-label{font:10px/1 ui-monospace,Menlo,Consolas,monospace;text-transform:uppercase;letter-spacing:.25em;opacity:.5;}
       .k-glass-body{margin-top:.4rem;font:20px/1.2 Georgia,serif;}
       @keyframes k-bob{0%{transform:translateY(0) rotate(0deg)}100%{transform:translateY(-10px) rotate(1deg)}}
@@ -39,7 +39,7 @@
       .k-outro{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6rem 1.5rem;text-align:center;}
       .k-outro h2{font:900 11vw/1 system-ui,-apple-system,sans-serif;letter-spacing:-.03em;}
       .k-outro h2 em{color:var(--k-accent);font-style:normal;}
-      .k-glow{position:absolute;left:50%;top:50%;width:38vmax;height:38vmax;transform:translate(-50%,-50%);border-radius:50%;opacity:.6;filter:blur(80px);pointer-events:none;background:radial-gradient(circle, color-mix(in srgb,var(--k-accent) 30%, transparent), transparent 60%);}
+      .k-glow{position:absolute;left:50%;top:50%;width:32vmax;height:32vmax;transform:translate(-50%,-50%);border-radius:50%;opacity:.35;filter:blur(70px);pointer-events:none;background:radial-gradient(circle, rgba(67,97,238,0.18), transparent 65%);}
       @media(min-width:768px){.k-hero-word{font-size:15vw;}.k-track-word{font-size:8.5vw;}.k-outro h2{font-size:6vw;}}
       @media(prefers-reduced-motion:reduce){.k-hero-word span{transition:none;opacity:1;transform:none;}.k-glass{animation:none;}}
       /* Keep dashboard readable on cream */
@@ -63,9 +63,7 @@
             <span class="k-track-word">Grid <em>smart</em></span><span class="k-track-sep">✳</span>
             <span class="k-track-word">Battery <em>ready</em></span>
           </div>
-          <div class="k-glass" style="left:8%;top:14%"><p class="k-glass-label">AI</p><p class="k-glass-body">Nemotron 120B<br>typo-proof</p></div>
-          <div class="k-glass" style="bottom:16%;right:9%"><p class="k-glass-label">Math</p><p class="k-glass-body">PuLP LP<br>E23==E0</p></div>
-          <div class="k-glass" style="bottom:8%;left:38%;border-radius:9999px;padding:.6rem 1.1rem"><p class="k-glass-body" style="font:11px/1 ui-monospace,Menlo,Consolas,monospace;text-transform:uppercase;letter-spacing:.22em">✳ 0.06s typo → 41008 BDT</p></div>
+          <div class="k-glass" style="left:9%;top:16%"><p class="k-glass-label">AI</p><p class="k-glass-body" style="color:#16213e">Nemotron 120B</p></div>
           <p class="k-hint">scroll → demo below</p>
         </div>
       </div>
